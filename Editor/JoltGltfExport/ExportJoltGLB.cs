@@ -171,8 +171,8 @@ public class ExportJoltGLB : MonoBehaviour
                 };
                 var center = data.bounds.center;
                 var ext = data.bounds.extents;
-                body.localBounds = new JoltRigidBody.JBounds { extents = new float[]{ ext[0], ext[1], ext[2] }, center = new float[]{ center[0],center[1],center[2]}};
-                body.worldPosition = body.localBounds.center;
+                body.extents = new float[]{ ext[0], ext[1], ext[2] };
+                body.worldPosition =  new float[]{ center[0],center[1],center[2]};
                 body.worldRotation = new float[] { 0, 0, 0, 1 };
                 body.worldScale = new float[] { 1, 1, 1};
 

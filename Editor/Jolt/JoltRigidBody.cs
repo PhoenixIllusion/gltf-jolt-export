@@ -15,7 +15,7 @@ public enum JoltCollisionShape // your custom enumeration
     TaperedCapsule,
     Cylinder,
     ConvexHull,
-    //StaticCompound,
+    StaticCompound,
     //RotatedTranslated,
     //Scaled,
     //OffsetCenterOfMass,
@@ -98,7 +98,7 @@ public class JoltRigidBody : MonoBehaviour
         public float[] worldPosition {get; set;} 
         public float[] worldScale {get; set;}
         public float[] worldRotation {get; set;}
-        public JBounds localBounds {get; set;}
+        public float[] extents {get; set;}
         public HeightFieldData heightfield {get; set;}
         public Buffer[] buffers {get; set;}
     }
@@ -137,7 +137,7 @@ public class JoltRigidBody : MonoBehaviour
             worldPosition = ToArray(this.m_WorldPosition),
             worldScale = ToArray(this.m_WorldScale),
             worldRotation = ToArray(this.m_WorldRotation),
-            localBounds = new JBounds { extents = ToArray(this.m_LocalBounds.extents), center = ToArray(this.m_LocalBounds.center) }
+            extents = ToArray(this.m_LocalBounds.extents)
         };
     }
 
