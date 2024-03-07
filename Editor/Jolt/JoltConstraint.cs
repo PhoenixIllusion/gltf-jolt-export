@@ -4,7 +4,9 @@ using UnityEngine;
 using UnityEditor;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-
+using UnityEngine.Splines;
+using Unity.Mathematics;
+using System.Linq;
 
 public enum JoltConstraintType 
 {
@@ -128,7 +130,7 @@ public class JoltConstraint : MonoBehaviour
     [SerializeField]
 	public float m_Ratio = 1;
     [SerializeField]
-	public LineRenderer m_Path;
+	public SplineContainer m_Path;
     [SerializeField]
     public Vector3 m_PathPosition;
     [SerializeField]
@@ -162,7 +164,6 @@ public class JoltConstraint : MonoBehaviour
     float[] ToArray(Quaternion v4) {
         return new float[] { v4[0], v4[1], v4[2], v4[3] };
     }
-
 
     private void OnDrawGizmos() {
         //Render Collision Shape
@@ -216,59 +217,30 @@ public class JoltConstraint : MonoBehaviour
         }
     }
 
-    public float GetPathLength() {
-        if(m_Path == null) {
-            return 0;
-        }
-        int numPoints = m_Path.positionCount;
-        Vector3[] pathPoints = new Vector3[numPoints];
-        m_Path.GetPositions(pathPoints);
-        float distance = 0;
-        for(var i = 0; i < numPoints - 1; i++) {
-            distance += (pathPoints[i] - pathPoints[i+1]).magnitude;
-        }
-        if(m_Path.loop) {
-            distance += (pathPoints[0] - pathPoints[numPoints-1]).magnitude;
-        }
-        return distance;
-    }
     public Vector3 GetPointAtFraction(float fraction) {
         if(m_Path == null) {
             return new Vector3();
         }
-        fraction = fraction % GetPathLength();
-        int numPoints = m_Path.positionCount;
-        Vector3[] pathPoints = new Vector3[numPoints];
-        m_Path.GetPositions(pathPoints);
-          for(var i = 0; i < numPoints - 1; i++) {
-            float distance = (pathPoints[i] - pathPoints[i+1]).magnitude;
-            if(fraction < distance) {
-                return Vector3.Lerp(pathPoints[i], pathPoints[i+1], fraction/distance);
-            }
-            fraction -= distance;
-        }
-        if(m_Path.loop) {
-            float distance = (pathPoints[0] - pathPoints[numPoints-1]).magnitude;
-            if(fraction < distance) {
-                return Vector3.Lerp(pathPoints[numPoints - 1], pathPoints[0], fraction/distance);
-            }
-        }
-        return new Vector3();
+
+        float3 position = m_Path.EvaluatePosition(0, fraction);
+        return new Vector3(position[0], position[1], position[2]);
     }
 
-    private float[][] GetPathPoints() {
-        if(m_Path == null) {
-            return new float[0][];
+    private float[][][] GetPathPoints() {
+        if(m_Path == null || m_Path.Splines.Count == 0) {
+            return new float[0][][];
         }
-        int numPoints = m_Path.positionCount;
-        Vector3[] pathPoints = new Vector3[numPoints];
-        List<float[]> response = new List<float[]>();
-        m_Path.GetPositions(pathPoints);
-        for(var i = 0; i < numPoints; i++) {
-            response.Add(ToArray(pathPoints[i]));
-        }
-        if(m_Path.loop) {
-            response.Add(response[0]);
+        Spline spline = m_Path.Splines[0];
+        List<float[][]> response = new List<float[][]>();
+        foreach(BezierKnot knot in spline.ToArray()) {
+            List<float[]> entry = new List<float[]>
+            {
+                ToArray(knot.Position),
+                ToArray(math.mul(knot.Rotation, knot.TangentIn)),
+                ToArray(math.mul(knot.Rotation, knot.TangentOut)),
+                ToArray(math.mul(knot.Rotation, math.up()))
+            };
+            response.Add(entry.ToArray());
         }
         return response.ToArray();
     }
@@ -299,6 +271,8 @@ public class JoltConstraint : MonoBehaviour
             Handles.Label(arcPoint, label);
         }
     }
+
+
 
     void renderConstraint() {
         Gizmos.color = Color.white;
@@ -412,11 +386,18 @@ public class JoltConstraint : MonoBehaviour
                     ConnectPoints(m_Body1.transform.position, p1);
                     Gizmos.DrawWireSphere(p1, 0.1f);
 
-                    Vector3[] pathPoints = new Vector3[m_Path.positionCount];
-                    m_Path.GetPositions(pathPoints);
+                    if(m_Path != null && m_Path.Spline.Count > 0) {
+                        Spline spline = m_Path.Splines[0];
+                    foreach(BezierKnot knot in spline.ToArray()) {
+                        Gizmos.DrawWireSphere(knot.Position, 0.1f);
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawLine(knot.Position, knot.Position + math.mul(knot.Rotation, knot.TangentIn));
+                        Gizmos.DrawLine(knot.Position, knot.Position + math.mul(knot.Rotation, knot.TangentOut));
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawLine(knot.Position, knot.Position + math.mul(knot.Rotation, math.up()));
+                    }
+                    }
                     Gizmos.matrix = m_Body1.transform.localToWorldMatrix * trs;
-                    
-                    Gizmos.DrawLineStrip(pathPoints, true);
                     Vector3 body2Point = GetPointAtFraction(m_PathFraction);
                     Vector3 worldBody2Point = Gizmos.matrix.MultiplyPoint(body2Point);
                     Gizmos.matrix = Matrix4x4.identity;
@@ -517,6 +498,7 @@ public class JoltConstraint : MonoBehaviour
             case JoltConstraintType.Path:
             return JObject.FromObject(new PathConstraint {
                 path = GetPathPoints(),
+                closed = (m_Path != null && m_Path.Splines.Count > 0) ? m_Path.Splines[0].Closed : false,
                 pathPosition = ToArray(m_PathPosition),
                 pathRotation = ToArray(m_PathRotation),
                 pathNormal = ToV3Array(m_PathNormal, Vector3.up, matrix1, true),

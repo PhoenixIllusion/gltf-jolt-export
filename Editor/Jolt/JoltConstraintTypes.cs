@@ -54,7 +54,8 @@
         public float halfConeAngle {get; set;}
     }
     public class PathConstraint {
-        public float[][] path { get; set;}
+        public float[][][] path { get; set;}
+        public bool closed {get; set;}
         public float[] pathPosition { get; set;}
         public float[] pathRotation { get; set;}
         public float[] pathNormal { get; set;}

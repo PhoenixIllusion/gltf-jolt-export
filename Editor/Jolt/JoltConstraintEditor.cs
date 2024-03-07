@@ -212,7 +212,6 @@ public class JoltConstraintEditor : Editor
                     AddPropertyField(m_PathPosition, 5);
                     AddPropertyField(m_PathRotation, 5);
                     AddPropertyField(m_PathNormal, 5);
-                    EditorGUILayout.LabelField("Path Length: ", "" + joltRigidBody.GetPathLength());
                     AddPropertyField(m_PathFraction, 2);
                     AddPropertyField(m_RotationConstraintType, 2);
                     AddPropertyField(m_MaxFrictionForce, 2);

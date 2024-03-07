@@ -7,7 +7,8 @@
   "unityRelease": "9f1",
   "dependencies": {
     "com.unity.cloud.gltfast": "6.2.0",
-    "com.unity.nuget.newtonsoft-json": "3.2.1"
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.splines": "2.5.2"
  },
  "keywords": [
     "gltf",
