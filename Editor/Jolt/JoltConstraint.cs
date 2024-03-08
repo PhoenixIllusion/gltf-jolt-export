@@ -52,10 +52,10 @@ public enum EMotorState {
 [System.Serializable]
 public class MotorSettings {
     [SerializeField]
-    public EMotorState m_MotorState;
+    public EMotorState m_MotorState = EMotorState.Off;
 
     [SerializeField]
-    public float m_TargetValue;
+    public float m_TargetValue = 0;
     
     [SerializeField]
     public float m_MinForceLimit = -float.MaxValue;
@@ -65,6 +65,18 @@ public class MotorSettings {
     public float m_MinTorqueLimit = -float.MaxValue;
     [SerializeField]
     public float m_MaxTorqueLimit = float.MaxValue;
+
+
+    public Motor GetData() {
+        return new Motor(){
+            state = m_MotorState.ToString(),
+            targetValue = m_TargetValue,
+            minForceLimit = m_MinForceLimit,
+            maxForceLimit = m_MaxForceLimit,
+            minTorqueLimit = m_MinTorqueLimit,
+            maxTorqueLimit = m_MaxTorqueLimit
+        };
+    }
 }
 
 public class JoltConstraint : MonoBehaviour
@@ -226,7 +238,7 @@ public class JoltConstraint : MonoBehaviour
         return new Vector3(position[0], position[1], position[2]);
     }
 
-    private float[][][] GetPathPoints() {
+    private float[][][] GetPathPoints(float3 body1Pos) {
         if(m_Path == null || m_Path.Splines.Count == 0) {
             return new float[0][][];
         }
@@ -235,7 +247,7 @@ public class JoltConstraint : MonoBehaviour
         foreach(BezierKnot knot in spline.ToArray()) {
             List<float[]> entry = new List<float[]>
             {
-                ToArray(knot.Position),
+                ToArray(knot.Position - body1Pos),
                 ToArray(math.mul(knot.Rotation, knot.TangentIn)),
                 ToArray(math.mul(knot.Rotation, knot.TangentOut)),
                 ToArray(math.mul(knot.Rotation, math.up()))
@@ -398,13 +410,12 @@ public class JoltConstraint : MonoBehaviour
                     }
                     }
                     Gizmos.matrix = m_Body1.transform.localToWorldMatrix * trs;
-                    Vector3 body2Point = GetPointAtFraction(m_PathFraction);
-                    Vector3 worldBody2Point = Gizmos.matrix.MultiplyPoint(body2Point);
+                    Vector3 body2Point = GetPointAtFraction(m_PathFraction / m_Path.Splines[0].GetLength());
                     Gizmos.matrix = Matrix4x4.identity;
 
                     Gizmos.color = Color.yellow;
-                    Gizmos.DrawWireSphere(worldBody2Point, 0.1f);
-                    ConnectPoints(transform.position, worldBody2Point);
+                    Gizmos.DrawWireSphere(body2Point, 0.1f);
+                    ConnectPoints(transform.position, body2Point);
                 }
             }
             break;
@@ -463,7 +474,8 @@ public class JoltConstraint : MonoBehaviour
                 normalAxis2 = ToV3Array(m_Rotation2, Vector3.left, matrix2),
                 limitsMin = m_LimitsMin,
                 limitsMax = m_LimitsMax,
-                maxFrictionTorque = m_MaxFrictionTorque
+                maxFrictionTorque = m_MaxFrictionTorque,
+                motor1 = m_Motor1.GetData()
             });
             case JoltConstraintType.Slider:
             return JObject.FromObject(new SliderConstraint {
@@ -476,7 +488,8 @@ public class JoltConstraint : MonoBehaviour
                 normalAxis2 = ToV3Array(m_Rotation2, Vector3.up, matrix2),
                 limitsMin = m_LimitsMin,
                 limitsMax = m_LimitsMax,
-                maxFrictionForce = m_MaxFrictionForce
+                maxFrictionForce = m_MaxFrictionForce,
+                motor1 = m_Motor1.GetData()
             });
             case JoltConstraintType.Distance:
             return JObject.FromObject(new DistanceConstraint {
@@ -497,14 +510,15 @@ public class JoltConstraint : MonoBehaviour
             });
             case JoltConstraintType.Path:
             return JObject.FromObject(new PathConstraint {
-                path = GetPathPoints(),
+                path = GetPathPoints(GetWorldPoint(m_Point1, matrix1)),
                 closed = (m_Path != null && m_Path.Splines.Count > 0) ? m_Path.Splines[0].Closed : false,
                 pathPosition = ToArray(m_PathPosition),
                 pathRotation = ToArray(m_PathRotation),
                 pathNormal = ToV3Array(m_PathNormal, Vector3.up, matrix1, true),
                 pathFraction = m_PathFraction,
                 rotationConstraintType = m_RotationConstraintType.ToString(),
-                maxFrictionForce = m_MaxFrictionForce
+                maxFrictionForce = m_MaxFrictionForce,
+                motor1 = m_Motor1.GetData()
             });
             case JoltConstraintType.Pulley:
             return JObject.FromObject(new PulleyConstraint {

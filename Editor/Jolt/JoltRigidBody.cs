@@ -37,8 +37,6 @@ public class JoltRigidBody : MonoBehaviour
     [SerializeField]
     public JoltMotionType m_MotionType = JoltMotionType.Static;
     [SerializeField]
-    public string m_MotionTypeS;
-    [SerializeField]
     public float m_Mass;
     [SerializeField]
     public float m_Friction;
@@ -46,9 +44,6 @@ public class JoltRigidBody : MonoBehaviour
     public float m_Restitution;
     [SerializeField]
     public JoltCollisionShape m_CollisionShape = JoltCollisionShape.Box;
-    [SerializeField]
-    public string m_CollisionShapeS;
-
 
     [SerializeField]
     public Vector3 m_WorldPosition; 
@@ -129,11 +124,11 @@ public class JoltRigidBody : MonoBehaviour
         }
         return new Data {
             type = this.m_ScriptType,
-            motionType = this.m_MotionTypeS,
+            motionType = this.m_MotionType.ToString(),
             mass = this.m_Mass,
             friction = this.m_Friction,
             restitution = this.m_Restitution,
-            collisionShape = this.m_CollisionShapeS,
+            collisionShape = this.m_CollisionShape.ToString(),
             worldPosition = ToArray(this.m_WorldPosition),
             worldScale = ToArray(this.m_WorldScale),
             worldRotation = ToArray(this.m_WorldRotation),
@@ -266,12 +261,10 @@ public class JoltRigidBodyEditor : Editor
     {
         m_ScriptType = serializedObject.FindProperty("m_ScriptType");
         m_MotionType = serializedObject.FindProperty("m_MotionType");
-        m_MotionTypeS = serializedObject.FindProperty("m_MotionTypeS");
         m_Mass = serializedObject.FindProperty("m_Mass");
         m_Friction = serializedObject.FindProperty("m_Friction");
         m_Restitution = serializedObject.FindProperty("m_Restitution");
         m_CollisionShape = serializedObject.FindProperty("m_CollisionShape");
-        m_CollisionShapeS = serializedObject.FindProperty("m_CollisionShapeS");
         //m_CenterOfMass = serializedObject.FindProperty("m_CenterOfMass");
     }
 
@@ -306,18 +299,7 @@ public class JoltRigidBodyEditor : Editor
                 joltRigidBody.m_LocalBounds = bounds; 
             }
         }
-/*
-        if(m_CollisionShape.enumNames[m_CollisionShape.enumValueIndex].Equals("OffsetCenterOfMass"))
-        {
-            // Draw field for B
-            EditorGUILayout.PropertyField(m_CenterOfMass);
-        }
-*/
 
-        m_MotionTypeS.stringValue = m_MotionType.enumNames[m_MotionType.enumValueIndex];
-        m_CollisionShapeS.stringValue = m_CollisionShape.enumNames[m_CollisionShape.enumValueIndex];
-        // write back serialized values to the real instance
-        // automatically handles all marking dirty and undo/redo
         serializedObject.ApplyModifiedProperties();
     }
 }

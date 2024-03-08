@@ -1,4 +1,20 @@
 #if UNITY_EDITOR
+
+    public class Motor {
+        public string state;
+        public float targetValue;
+        public float minForceLimit;
+        public float maxForceLimit;
+        public float minTorqueLimit;
+        public float maxTorqueLimit;
+    }
+    public class Spring {
+        public string mode;
+        public float frequency;
+        public float stiffness;
+        public float damping;
+    }
+
     public class FixedConstraint {
         public string space { get; set;}
         public float[] point1 { get; set;}
@@ -25,6 +41,8 @@
         public float limitsMin {get; set;}
         public float limitsMax {get; set;}
         public float maxFrictionTorque {get; set;}
+        public Spring spring {get; set;}
+        public Motor motor1 { get; set;}
     }
     public class SliderConstraint {
         public string space { get; set;}
@@ -37,6 +55,8 @@
         public float limitsMin {get; set;}
         public float limitsMax {get; set;}
         public float maxFrictionForce {get; set;}
+        public Spring spring {get; set;}
+        public Motor motor1 { get; set;}
     }
     public class DistanceConstraint {
         public string space { get; set;}
@@ -44,6 +64,7 @@
         public float[] point2 { get; set;}
         public float minDistance {get; set;}
         public float maxDistance {get; set;}
+        public Spring spring {get; set;}
     }
     public class ConeConstraint {
         public string space { get; set;}
@@ -62,6 +83,7 @@
         public float pathFraction { get; set;}
         public string rotationConstraintType { get; set;}
         public float maxFrictionForce {get; set;}
+        public Motor motor1 { get; set;}
     }
     public class PulleyConstraint {
         public string space { get; set;}
