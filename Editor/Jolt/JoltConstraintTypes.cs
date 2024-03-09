@@ -15,7 +15,12 @@
         public float damping;
     }
 
-    public class FixedConstraint {
+    public class JoltConstraintData {
+        public string type {get; set;}
+        public int body1 { get; set;}
+    }
+
+    public class FixedConstraint: JoltConstraintData{
         public string space { get; set;}
         public float[] point1 { get; set;}
         public float[] axisx1 { get; set;}
@@ -25,12 +30,12 @@
         public float[] axisy2 { get; set;}
     }
 
-    public class PointConstraint {
+    public class PointConstraint: JoltConstraintData {
         public string space { get; set;}
         public float[] point1 { get; set;}
         public float[] point2 { get; set;}
     }
-    public class HingeConstraint {
+    public class HingeConstraint: JoltConstraintData {
         public string space { get; set;}
         public float[] point1 { get; set;}
         public float[] hingeAxis1 { get; set;}
@@ -44,7 +49,7 @@
         public Spring spring {get; set;}
         public Motor motor1 { get; set;}
     }
-    public class SliderConstraint {
+    public class SliderConstraint: JoltConstraintData {
         public string space { get; set;}
         public float[] point1 { get; set;}
         public float[] sliderAxis1 { get; set;}
@@ -58,7 +63,7 @@
         public Spring spring {get; set;}
         public Motor motor1 { get; set;}
     }
-    public class DistanceConstraint {
+    public class DistanceConstraint: JoltConstraintData {
         public string space { get; set;}
         public float[] point1 { get; set;}
         public float[] point2 { get; set;}
@@ -66,7 +71,7 @@
         public float maxDistance {get; set;}
         public Spring spring {get; set;}
     }
-    public class ConeConstraint {
+    public class ConeConstraint: JoltConstraintData {
         public string space { get; set;}
         public float[] point1 { get; set;}
         public float[] twistAxis1 { get; set;}
@@ -74,7 +79,7 @@
         public float[] twistAxis2 { get; set;}
         public float halfConeAngle {get; set;}
     }
-    public class PathConstraint {
+    public class PathConstraint: JoltConstraintData {
         public float[][][] path { get; set;}
         public bool closed {get; set;}
         public float[] pathPosition { get; set;}
@@ -85,7 +90,7 @@
         public float maxFrictionForce {get; set;}
         public Motor motor1 { get; set;}
     }
-    public class PulleyConstraint {
+    public class PulleyConstraint: JoltConstraintData {
         public string space { get; set;}
         public float[] bodyPoint1 { get; set;}
         public float[] bodyPoint2 { get; set;}

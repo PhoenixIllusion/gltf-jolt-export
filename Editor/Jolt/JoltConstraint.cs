@@ -443,12 +443,12 @@ public class JoltConstraint : MonoBehaviour
         }
     }
 
-    public JObject GetData() {
+    public JoltConstraintData GetData() {
         var matrix1 = m_Body1.transform.localToWorldMatrix;
         var matrix2 = transform.localToWorldMatrix;
         switch(m_ConstraintType) {
             case JoltConstraintType.Fixed:
-            return JObject.FromObject(new FixedConstraint {
+            return new FixedConstraint {
                 space = m_Space.ToString(),
                 point1 = ToArray(m_Point1),
                 axisx1 = ToV3Array(m_Rotation1, Vector3.left, matrix1),
@@ -456,15 +456,15 @@ public class JoltConstraint : MonoBehaviour
                 point2 = ToArray(m_Point2),
                 axisx2 = ToV3Array(m_Rotation2, Vector3.left, matrix2),
                 axisy2 = ToV3Array(m_Rotation2, Vector3.up, matrix2),
-            });
+            };
             case JoltConstraintType.Point:
-            return JObject.FromObject(new PointConstraint {
+            return new PointConstraint {
                 space = m_Space.ToString(),
                 point1 = ToArray(m_Point1),
                 point2 = ToArray(m_Point2)
-            });
+            };
             case JoltConstraintType.Hinge:
-            return JObject.FromObject(new HingeConstraint {
+            return new HingeConstraint {
                 space = m_Space.ToString(),
                 point1 = ToArray(m_Point1),
                 hingeAxis1 = ToV3Array(m_Rotation1, Vector3.forward, matrix1),
@@ -476,9 +476,9 @@ public class JoltConstraint : MonoBehaviour
                 limitsMax = m_LimitsMax,
                 maxFrictionTorque = m_MaxFrictionTorque,
                 motor1 = m_Motor1.GetData()
-            });
+            };
             case JoltConstraintType.Slider:
-            return JObject.FromObject(new SliderConstraint {
+            return new SliderConstraint {
                 space = m_Space.ToString(),
                 point1 = ToArray(m_Point1),
                 sliderAxis1 = ToV3Array(m_Rotation1, Vector3.left, matrix1),
@@ -490,26 +490,26 @@ public class JoltConstraint : MonoBehaviour
                 limitsMax = m_LimitsMax,
                 maxFrictionForce = m_MaxFrictionForce,
                 motor1 = m_Motor1.GetData()
-            });
+            };
             case JoltConstraintType.Distance:
-            return JObject.FromObject(new DistanceConstraint {
+            return new DistanceConstraint {
                 space = m_Space.ToString(),
                 point1 = ToArray(m_Point1),
                 point2 = ToArray(m_Point2),
                 minDistance = m_MinDistance,
                 maxDistance = m_MaxDistance,
-            });
+            };
             case JoltConstraintType.Cone:
-            return JObject.FromObject(new ConeConstraint {
+            return new ConeConstraint {
                 space = m_Space.ToString(),
                 point1 = ToArray(m_Point1),
                 twistAxis1 = ToV3Array(m_Rotation1, Vector3.left, matrix1),
                 point2 = ToArray(m_Point2),
                 twistAxis2 = ToV3Array(m_Rotation2, Vector3.left, matrix2),
                 halfConeAngle = m_HalfConeAngle
-            });
+            };
             case JoltConstraintType.Path:
-            return JObject.FromObject(new PathConstraint {
+            return new PathConstraint {
                 path = GetPathPoints(GetWorldPoint(m_Point1, matrix1)),
                 closed = (m_Path != null && m_Path.Splines.Count > 0) ? m_Path.Splines[0].Closed : false,
                 pathPosition = ToArray(m_PathPosition),
@@ -519,9 +519,9 @@ public class JoltConstraint : MonoBehaviour
                 rotationConstraintType = m_RotationConstraintType.ToString(),
                 maxFrictionForce = m_MaxFrictionForce,
                 motor1 = m_Motor1.GetData()
-            });
+            };
             case JoltConstraintType.Pulley:
-            return JObject.FromObject(new PulleyConstraint {
+            return new PulleyConstraint {
                 space = m_Space.ToString(),
                 bodyPoint1 = ToArray(m_Point1),
                 bodyPoint2 = ToArray(m_Point2),
@@ -530,7 +530,7 @@ public class JoltConstraint : MonoBehaviour
                 ratio = m_Ratio,
                 minLength = m_MinLength,
                 maxLength = m_MaxLength
-            });
+            };
         }
         return null;
     }
