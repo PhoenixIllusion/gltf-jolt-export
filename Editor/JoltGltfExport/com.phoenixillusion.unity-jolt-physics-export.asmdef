@@ -2,9 +2,9 @@
     "name": "ExportJoltGLB",
     "rootNamespace": "",
     "references": [
-        "glTFast",
-        "glTFast.Editor",
-        "glTFast.Export",
+        "UnityGLTFScripts",
+        "UnityGLTFEditor",
+        "GLTFSerialization",
         "JoltPhysicsMarkup",
         "Unity.Mathematics"
     ],

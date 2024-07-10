@@ -67,7 +67,7 @@ public class JoltRigidBody : MonoBehaviour
 
     public class HeightFieldLayer {
         public int diffuse;
-        public int bump;
+        public Nullable<int> bump;
         public float[] tileSize;
         public float[] tileOffset;
         public string name;
