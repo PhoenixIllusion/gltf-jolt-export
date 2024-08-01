@@ -1,3 +1,9 @@
+## Note:
+This project now uses UnityGLTF, which is not in the Unity Package collection, so can not be automatically installed.
+To use this package, first install [UnityGLTF](https://github.com/KhronosGroup/UnityGLTF) by following the instructions, then install this package. This will avoid installation failures to to being unable to locate the UnityGLTF dependency.
+
+UnityGLTF Installation instructions: https://github.com/KhronosGroup/UnityGLTF#installation
+
 
 This package is composed of two parts:
 
@@ -55,8 +61,8 @@ The most complicated constraints (configuration wise, with regard to not just de
 2. Path Constraints. This will require Body1 is a path-owner. The path will exist, centered around Body1.
   * You may translate the path relative to Body1, and then tilt it at this new location, using the Path Position and Rotation.
   * On-start, Jolt will dynamically generate a Point2 on the path using "Path Fraction" and treat this as a usual (body1-space) Body2 constraint point (indicated on the GUI overlay
+  - This constraint references a Spline object, using [com.unity.splines](https://docs.unity3d.com/Packages/com.unity.splines@2.4/manual/index.html) to create the curve
   - TODO: modify to use PathPosition instead).
-  - TODO: update to support the properties on corner-curving, Catmull-Rom, Hermite
 
 4. Gears - Both bodies must have a hinge constraint. TODO: not implemented, likely will just copy hinge axis from those constraints into this new constraint
 5. Gear and Pinion - Body 1 must have a Hinge (gear-like), and Body 2 must be a slider
@@ -81,23 +87,25 @@ For several situations, this order does not matter, but in the following it may 
 
 ## Jolt Physics Export
 
-The export script uses heavy usage and modification of the gltFast projects code (https://github.com/Unity-Technologies/com.unity.cloud.gltfast)
+The export script uses an extension of the [UnityGLTF](https://github.com/KhronosGroup/UnityGLTF) projects by [Khronos](https://www.khronos.org/), (https://github.com/KhronosGroup/UnityGLTF)
 
-To use this script, go to File > Scene > Export Jolt GLTB (currently only supports the binary GLTF 2.0 format)
+To use this script, go to Assets > UnityGLTF > Export Scene
 
-This script will run the original gltFast GLB export, and then post-process the GLTF 2.0 binary to add GLTF extra attributes to the scene. 
+This script run the Khronos export process, but add in additional hooks to identify:
+  1. Unity Colliders
+    a. Optionally - Rigid Body properties
+  2. Jolt RigidBody Data
+  3. Jolt Constraint Data
+  4. Terrain Data
 
-Note: This is currently done by traversing the Unity Scene in the exact same order and logic used in gltFast export to map the GLTF nodes to the Unity scene.
-**This means that updates to gltFast may break this 1-to-1 mapping.**
-
-GLTF extra data will be updated with a 'jolt' property, and a corresponding 'collision' property and 'constraint' array. Minor validation may be run to ensure that constraints only exist and point to other Jolt Rigid Bodies, but this is not guaranteed and little-to-no error handling is done right now.
+GLTF extra data will be updated with a 'jolt' property, and a corresponding 'collision' property and 'constraint' array.
 
 Most bodies will be produced only using a text-based 'shape' and the world-space data (scale, rotation, position) along with extent data. It appears that multiplying extents by scale approximates the actual shape in the Unity editor.
 **Note: Skinned Meshes and piece-wise meshes may not have proper extents**
 
-The GLTF file automatically (via the gltFast library) will automatically include the Meshes of a node, which should correspond to the same GLTF node that receives the Jolt collision/constraint extra. This should provide the needed data for deriving any vertex-heavy collision shape (Mesh and ConvexHull)
+The GLTF file automatically will automatically include the Meshes of a node, which should correspond to the same GLTF node that receives the Jolt collision/constraint extra. This should provide the needed data for deriving any vertex-heavy collision shape (Mesh and ConvexHull)
 
-As a special case, Heightfields in Unity do not use Mesh, so special code was added to compile the Heightfield into a GLTF data format. (TODO: extra code to ensure that Terrain Layer data is shared between all terrain since it is re-used in unity between all terrain)
+As a special case, Heightfields in Unity do not use Meshes, so special code was added to compile the Heightfield into a GLTF data format. (TODO: extra code to ensure that Terrain Layer data is shared between all terrain since it is re-used in unity between all terrain)
 
 Heightfields (Terrain in Unity) are stored using a depth-map (referenced in the GLTF data object as an image Index using GLTF standard format of image-storage) in RGB PNG format, encoding the floating-point value between [0x000000 and 0xFFFFFF], scaled  between min-height and max-height. The actual min/max heights will be stored in the JSON to use in reconstruction.
 * The terrain texture is stored using one or more Splat-Maps from the TerrainData.

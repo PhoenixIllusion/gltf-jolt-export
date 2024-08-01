@@ -57,35 +57,19 @@ public class Jolt_Physics_Extension_context : GLTFExportPluginContext
   }
 
   void AddJoltData(JoltGltfUtil gltf) {
-      var allGameObjects = nodeMap.Keys;
-      foreach(GameObject obj in allGameObjects) {
-        Node node = nodeMap[obj];
+    var allGameObjects = nodeMap.Keys;
+    foreach(GameObject obj in allGameObjects) {
+      Node node = nodeMap[obj];
 
-        JObject joltExtras = gltf.CreateJoltExtras(node);
-        foreach(IJoltGltfPlugin plugin in plugins)
-        {
-          if(plugin.HasJoltData(obj)) {
-            plugin.AddJoltData(joltExtras, obj, gltf);
-          }
-        }
-
-        var constraints = obj.GetComponents<JoltConstraint>();
-        if(constraints.Length > 0) 
-        {
-          List<JObject> jsonConstraints = new();
-          for(var i=0;i<constraints.Length; i++) {
-            var constraint = constraints[i];
-            if(constraint.m_Body1 != null) {
-              JoltConstraintData constraintJson = constraint.GetData();
-              constraintJson.type = constraint.m_ConstraintType.ToString();
-              constraintJson.body1 = gltf.NodeIdFromGameObject(constraint.m_Body1);
-              jsonConstraints.Add(JObject.FromObject(constraintJson));
-            }
-          }
-          joltExtras["constraints"] = new JArray(jsonConstraints.ToArray());
+      JObject joltExtras = gltf.CreateJoltExtras(node);
+      foreach(IJoltGltfPlugin plugin in plugins)
+      {
+        if(plugin.HasJoltData(obj)) {
+          plugin.AddJoltData(joltExtras, obj, gltf);
         }
       }
-    } 
+    }
+  } 
 
   public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot root)
   {

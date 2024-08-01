@@ -16,9 +16,6 @@ public enum JoltCollisionShape // your custom enumeration
     Cylinder,
     ConvexHull,
     StaticCompound,
-    //RotatedTranslated,
-    //Scaled,
-    //OffsetCenterOfMass,
     Mesh,
     HeightField,
 };
@@ -37,11 +34,11 @@ public class JoltRigidBody : MonoBehaviour
     [SerializeField]
     public JoltMotionType m_MotionType = JoltMotionType.Static;
     [SerializeField]
-    public float m_Mass;
+    public float m_Mass = 0f;
     [SerializeField]
-    public float m_Friction;
+    public float m_Friction = 0.2f;
     [SerializeField]
-    public float m_Restitution;
+    public float m_Restitution = 0.0f;
     [SerializeField]
     public JoltCollisionShape m_CollisionShape = JoltCollisionShape.Box;
 
@@ -53,8 +50,16 @@ public class JoltRigidBody : MonoBehaviour
     public Quaternion m_WorldRotation;
     [SerializeField]
     public Bounds m_LocalBounds;
-    //[SerializeField]
-    //private Vector3 m_CenterOfMass;
+    [SerializeField]
+    public Mesh m_Mesh;
+    [SerializeField]
+    public bool m_IsSensor = false;
+    [SerializeField]
+    private Vector3 m_CenterOfMass = new Vector3(0,0,0);
+    [SerializeField]
+    private LayerMask m_IncludeLayer;
+    [SerializeField]
+    private LayerMask m_ExcludeLayer;
 
     public class JBounds {
         public float[] center { get; set; }
@@ -73,8 +78,21 @@ public class JoltRigidBody : MonoBehaviour
         public string name;
     }
 
+    public class TerrainBillboard {
+        public int texture;
+        public float[] min;
+        public float[] max;
+    }
+
+    public class TerrainDetail {
+        public int densityMap;
+        public Nullable<int> mesh;
+        public TerrainBillboard billboard;
+    }
+
     public class HeightFieldData {
        public int depthBuffer;
+       public int holes;
        public float minHeight;
        public float maxHeight;
        public float[] colorFilter;
@@ -82,20 +100,22 @@ public class JoltRigidBody : MonoBehaviour
        public int[] splatIndex;
        public HeightFieldLayer[] layers;
 
+       public TerrainDetail[] details;
     }
     public class Data {
-        public string type { get; set; }
         public string motionType { get; set; }
-        public float mass { get; set; }
-        public float friction { get; set; }
-        public float restitution { get; set; }
+        public Nullable<float> mass { get; set; }
+        public Nullable<float> friction { get; set; }
+        public Nullable<float> restitution { get; set; }
         public string collisionShape {get; set;}
         public float[] worldPosition {get; set;} 
         public float[] worldScale {get; set;}
         public float[] worldRotation {get; set;}
         public float[] extents {get; set;}
+        public Nullable<bool> isSensor { get; set;}
+        public Nullable<int> mesh { get; set; }
         public HeightFieldData heightfield {get; set;}
-        public Buffer[] buffers {get; set;}
+        public float[] centerOfMass {get; set;}
     }
 
     float[] ToArray(Vector3 v3) {
@@ -122,17 +142,25 @@ public class JoltRigidBody : MonoBehaviour
             m_WorldScale = worldMatrix.lossyScale;
             m_LocalBounds = bounds; 
         }
+        string motionType = null;
+        if(
+            (m_Mass == 0f && m_MotionType != JoltMotionType.Static) ||
+            (m_Mass != 0f && m_MotionType != JoltMotionType.Dynamic)
+         ) {
+            motionType = m_MotionType.ToString();
+        }
         return new Data {
-            type = this.m_ScriptType,
-            motionType = this.m_MotionType.ToString(),
-            mass = this.m_Mass,
-            friction = this.m_Friction,
-            restitution = this.m_Restitution,
-            collisionShape = this.m_CollisionShape.ToString(),
-            worldPosition = ToArray(this.m_WorldPosition),
-            worldScale = ToArray(this.m_WorldScale),
-            worldRotation = ToArray(this.m_WorldRotation),
-            extents = ToArray(this.m_LocalBounds.extents)
+            motionType = motionType,
+            mass = m_Mass == 0.0f ? null : m_Mass,
+            friction = (m_Friction == 0.2f) ? null : m_Friction,
+            restitution = (m_Restitution == 0.0f) ? null : m_Restitution,
+            collisionShape = m_CollisionShape.ToString(),
+            worldPosition = ToArray(m_WorldPosition),
+            worldScale = (m_WorldScale == Vector3.one) ? null : ToArray(m_WorldScale),
+            worldRotation = (m_WorldRotation == Quaternion.identity) ? null : ToArray(m_WorldRotation),
+            extents = ToArray(m_LocalBounds.extents),
+            isSensor = m_IsSensor ? true : null,
+            centerOfMass = (m_CenterOfMass == Vector3.zero) ? null : ToArray(m_CenterOfMass)
         };
     }
 
@@ -180,9 +208,14 @@ public class JoltRigidBody : MonoBehaviour
                 break;
             }
             case JoltCollisionShape.Mesh: {
-                if (gameObject != null && gameObject.TryGetComponent<MeshFilter>(out MeshFilter mFilter))
-                {
-                    Gizmos.DrawWireMesh(mFilter.sharedMesh);
+                if (gameObject != null) {
+                    if (m_Mesh != null) {
+                        Gizmos.DrawWireMesh(m_Mesh);
+                    }
+                    else if(gameObject.TryGetComponent<MeshFilter>(out MeshFilter mFilter))
+                    {
+                        Gizmos.DrawWireMesh(mFilter.sharedMesh);
+                    }
                 }
                 break;
             }
@@ -248,13 +281,15 @@ public class JoltRigidBodyEditor : Editor
 {
     SerializedProperty m_ScriptType;
     SerializedProperty m_MotionType;
-    SerializedProperty m_MotionTypeS;
     SerializedProperty m_Mass;
     SerializedProperty m_Friction;
     SerializedProperty m_Restitution;
     SerializedProperty m_CollisionShape;
-    SerializedProperty m_CollisionShapeS;
-    //SerializedProperty m_CenterOfMass; 
+    SerializedProperty m_Mesh;
+    SerializedProperty m_IsSensor;
+    SerializedProperty m_CenterOfMass; 
+    SerializedProperty m_IncludeLayer; 
+    SerializedProperty m_ExcludeLayer; 
 
     // is called once when according object gains focus in the hierachy
     private void OnEnable()
@@ -265,7 +300,12 @@ public class JoltRigidBodyEditor : Editor
         m_Friction = serializedObject.FindProperty("m_Friction");
         m_Restitution = serializedObject.FindProperty("m_Restitution");
         m_CollisionShape = serializedObject.FindProperty("m_CollisionShape");
-        //m_CenterOfMass = serializedObject.FindProperty("m_CenterOfMass");
+        m_Mesh = serializedObject.FindProperty("m_Mesh");
+        m_IsSensor = serializedObject.FindProperty("m_IsSensor");
+        m_CenterOfMass = serializedObject.FindProperty("m_CenterOfMass");
+
+        m_IncludeLayer = serializedObject.FindProperty("m_IncludeLayer");
+        m_ExcludeLayer = serializedObject.FindProperty("m_ExcludeLayer");
     }
 
     public override void OnInspectorGUI()
@@ -273,30 +313,23 @@ public class JoltRigidBodyEditor : Editor
         // fetch current values from the real instance into the serialized "clone"
         serializedObject.Update();
 
-        // Draw field for A
+        EditorGUILayout.PropertyField(m_CollisionShape);
+        EditorGUILayout.PropertyField(m_MotionType);
         EditorGUILayout.PropertyField(m_Mass);
         EditorGUILayout.PropertyField(m_Friction);
         EditorGUILayout.PropertyField(m_Restitution);
-        EditorGUILayout.PropertyField(m_CollisionShape);
-        EditorGUILayout.PropertyField(m_MotionType);
+        EditorGUILayout.PropertyField(m_IsSensor);
+        EditorGUILayout.PropertyField(m_CenterOfMass);
+
+        EditorGUILayout.LabelField("Collision Layers");
+        EditorGUILayout.PropertyField(m_IncludeLayer);
+        EditorGUILayout.PropertyField(m_ExcludeLayer);
 
         var joltRigidBody = target as JoltRigidBody;
         if (joltRigidBody != null && joltRigidBody.gameObject != null) {
-            var gameObject = joltRigidBody.gameObject;
-            if(gameObject.TryGetComponent<MeshRenderer>(out MeshRenderer renderer)) {
-                var bounds = renderer.localBounds; 
-                var worldMatrix = renderer.localToWorldMatrix;
-                joltRigidBody.m_WorldPosition = worldMatrix.GetPosition();
-                joltRigidBody.m_WorldRotation = worldMatrix.rotation;
-                joltRigidBody.m_WorldScale = worldMatrix.lossyScale;
-                joltRigidBody.m_LocalBounds = bounds; 
-            } else if(gameObject.TryGetComponent<SkinnedMeshRenderer>(out SkinnedMeshRenderer skinnedRenderer)) {
-                var bounds = skinnedRenderer.localBounds; 
-                var worldMatrix = skinnedRenderer.localToWorldMatrix;
-                joltRigidBody.m_WorldPosition = worldMatrix.GetPosition();
-                joltRigidBody.m_WorldRotation = worldMatrix.rotation;
-                joltRigidBody.m_WorldScale = worldMatrix.lossyScale;
-                joltRigidBody.m_LocalBounds = bounds; 
+            if(joltRigidBody.m_CollisionShape == JoltCollisionShape.Mesh || joltRigidBody.m_CollisionShape == JoltCollisionShape.ConvexHull) {
+                EditorGUILayout.LabelField("Collision Mesh");
+                EditorGUILayout.PropertyField(m_Mesh);
             }
         }
 
